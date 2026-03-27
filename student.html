@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Tracker | Live Bus</title>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Poppins', 'sans-serif'] },
+          colors: { brand: { 500: '#3b82f6', 600: '#2563eb' } }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    #map { height: 65vh; width: 100%; border-radius: 1.5rem; }
+    .pulse-ring {
+      position: absolute;
+      width: 100%; height: 100%;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(.8); opacity:.7 }
+      100% { transform: scale(1.6); opacity:0 }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen font-sans">
+
+<!-- NAVBAR -->
+<nav class="bg-white dark:bg-gray-800 shadow px-6 py-4 flex justify-between items-center">
+  <h1 class="font-bold text-lg text-brand-600">👨‍🎓 Student View</h1>
+  <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-full">Logout</button>
+</nav>
+
+<!-- MAIN -->
+<main class="p-6 max-w-6xl mx-auto space-y-6">
+
+  <div>
+    <h2 class="text-2xl font-bold">Live Bus Tracking</h2>
+    <p class="text-gray-500 text-sm">Select a bus to track its live location</p>
+  </div>
+
+  <!-- 🔽 BUS DROPDOWN -->
+  <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow">
+    <label class="font-semibold text-sm mb-2 block">🎯 Select Bus</label>
+    <select id="busSelect"
+      class="w-full p-2 rounded-lg border dark:bg-gray-900">
+      <option value="all">All Buses</option>
+    </select>
+  </div>
+
+  <!-- BUS CARDS -->
+  <div id="busCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div id="noBusMessage" class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+      🚍 Waiting for drivers...
+    </div>
+  </div>
+
+  <!-- SELECTED BUS DETAILS (STOPS) -->
+  <div id="stopsPanel" class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow hidden">
+    <h3 class="text-xl font-bold mb-4">🛑 Bus Stops</h3>
+    <div id="stopsList" class="space-y-2 max-h-48 overflow-y-auto">
+      <div class="text-center text-gray-400 text-sm py-4">No stops available</div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="rounded-2xl overflow-hidden shadow-lg">
+    <div id="map"></div>
+  </div>
+
+</main>
+
+<footer class="text-center text-xs py-4 text-gray-400">
+  © 2025 College Bus Tracking System
+</footer>
+
+<script>
+  let lastBuses = [];
+
+  const socket = io();
+  let map;
+  let markers = {};
+  let stopMarkers = [];
+  let selectedBusEmail = "all";
+
+  const colors = ['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6'];
+
+  document.getElementById("logoutBtn").onclick = () => {
+    localStorage.clear();
+    location.href = "index.html";
+  };
+
+  document.getElementById("busSelect").onchange = e => {
+    selectedBusEmail = e.target.value;
+    updateUI(lastBuses);
+    updateStopsPanel();
+  };
+
+  function updateStopsPanel() {
+    const stopsPanel = document.getElementById("stopsPanel");
+    const stopsList = document.getElementById("stopsList");
+
+    if (selectedBusEmail === "all") {
+      stopsPanel.classList.add("hidden");
+      return;
+    }
+
+    const selectedBus = lastBuses.find(b => b.driverEmail === selectedBusEmail);
+    
+    if (!selectedBus || !selectedBus.stops || selectedBus.stops.length === 0) {
+      stopsPanel.classList.add("hidden");
+      return;
+    }
+
+    stopsPanel.classList.remove("hidden");
+    
+    stopsList.innerHTML = selectedBus.stops.map((stop, idx) => {
+      const isCurrent = idx === selectedBus.currentStopIndex;
+      return `
+        <div class="flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-3 rounded-lg border-l-4 ${isCurrent ? 'border-blue-500' : 'border-green-500'}">
+          <div class="flex-1">
+            <div class="font-semibold text-sm">
+              ${isCurrent ? '📍' : '🛑'} ${idx + 1}. ${stop.name}
+            </div>
+            <div class="text-xs text-gray-500">${stop.latitude}, ${stop.longitude}</div>
+          </div>
+          ${isCurrent ? '<span class="text-xs bg-blue-500 text-white px-2 py-1 rounded">Current</span>' : ''}
+        </div>
+      `;
+    }).join("");
+  }
+
+  function initMap(){
+    map = new google.maps.Map(document.getElementById("map"), {
+      center: { lat: 12.9716, lng: 77.5946 },
+      zoom: 13
+    });
+  }
+
+  function clearMarkers(){
+    Object.values(markers).forEach(m => m.setMap(null));
+    stopMarkers.forEach(m => m.setMap(null));
+    markers = {};
+    stopMarkers = [];
+  }
+
+  function updateUI(buses){
+    lastBuses = buses;
+
+    const container = document.getElementById("busCardsContainer");
+    const dropdown = document.getElementById("busSelect");
+
+    container.innerHTML = "";
+
+    const previousSelection = selectedBusEmail;
+
+    dropdown.innerHTML = `<option value="all">All Buses</option>`;
+    buses.forEach(b => {
+      const opt = document.createElement("option");
+      opt.value = b.driverEmail;
+      opt.textContent = `${b.driverName} (${b.stops?.length || 0} stops)`;
+      dropdown.appendChild(opt);
+    });
+
+    dropdown.value = previousSelection;
+
+    if (buses.length === 0) {
+      container.innerHTML = `<div class="bg-white dark:bg-gray-800 p-4 rounded">No active buses</div>`;
+      clearMarkers();
+      updateStopsPanel();
+      return;
+    }
+
+    clearMarkers();
+
+    const filtered =
+      selectedBusEmail === "all"
+        ? buses
+        : buses.filter(b => b.driverEmail === selectedBusEmail);
+
+    filtered.forEach((bus, i) => {
+      const stopsInfo = bus.stops && bus.stops.length > 0 
+        ? `<div class="text-xs text-gray-400 mt-1">🛑 ${bus.stops.length} stops</div>`
+        : '';
+
+      container.innerHTML += `
+        <div class="bg-white dark:bg-gray-800 p-4 rounded shadow border-l-4"
+          style="border-color:${colors[i % colors.length]}">
+          <strong>${bus.driverName}</strong>
+          <div class="text-xs">${bus.latitude}, ${bus.longitude}</div>
+          ${stopsInfo}
+        </div>
+      `;
+
+      const marker = new google.maps.Marker({
+        map,
+        position: { lat: +bus.latitude, lng: +bus.longitude },
+        icon: {
+          url: "bus.png/bus_.png",
+          scaledSize: new google.maps.Size(40, 40)
+        }
+      });
+
+      markers[bus.driverEmail] = marker;
+
+      // Add stop markers only for the selected bus (not for "all" view)
+      if (selectedBusEmail === bus.driverEmail && bus.stops && bus.stops.length > 0) {
+        bus.stops.forEach((stop, stopIdx) => {
+          const isCurrent = stopIdx === bus.currentStopIndex;
+          const marker = new google.maps.Marker({
+            map,
+            position: { lat: +stop.latitude, lng: +stop.longitude },
+            title: `${stop.name} (${bus.driverName})`,
+            icon: {
+              url: '/bus.png/stop.png',
+              scaledSize: new google.maps.Size(35, 35)
+            }
+          });
+          stopMarkers.push(marker);
+        });
+      }
+    });
+
+    if (filtered.length === 1) {
+      map.panTo({
+        lat: +filtered[0].latitude,
+        lng: +filtered[0].longitude
+      });
+      map.setZoom(16);
+    } else if (filtered.length > 1) {
+      const bounds = new google.maps.LatLngBounds();
+      filtered.forEach(b =>
+        bounds.extend({ lat: +b.latitude, lng: +b.longitude })
+      );
+      map.fitBounds(bounds);
+    }
+
+    updateStopsPanel();
+  }
+
+  socket.on("connect", () => socket.emit("request-current"));
+  socket.on("all-buses", updateUI);
+</script>
+
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCzejsIQjrvZAvl_BxEzfRkD9z5YqtFYSg&callback=initMap">
+</script>
+
+</body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "users": [
+    {
+      "name": "Karthik",
+      "email": "karthik@student.edu",
+      "password": "123",
+      "role": "student"
+    },
+    {
+      "name": "Tunga (KA14 Z 1234)",
+      "email": "driver1@college.edu",
+      "password": "123",
+      "role": "driver"
+    },
+    {
+      "name": "Bhadra (KA14 Y 4321)",
+      "email": "driver2@college.edu",
+      "password": "123",
+      "role": "driver"
+    },
+    {
+      "name": "Varada (KA 14 E 6007)",
+      "email": "driver3@college.edu",
+      "password": "123",
+      "role": "driver"
+    },
+    {
+      "name": "Shivamogga",
+      "email": "jashwanth41@zohomail.in",
+      "password": "123",
+      "role": "student"
+    }
+  ]
+}

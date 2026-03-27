@@ -1,0 +1,45 @@
+{
+  "stops": {
+    "driver1@college.edu": [
+      {
+        "name": "jnnce",
+        "latitude": "13.969800",
+        "longitude": "75.583000",
+        "order": 1,
+        "id": 1766596928104
+      }
+    ],
+    "driver3@college.edu": [
+      {
+        "name": "jail",
+        "latitude": "13.938400",
+        "longitude": "75.569500",
+        "order": 1,
+        "id": 1766593456968
+      },
+      {
+        "name": "gopala",
+        "latitude": "13.930400",
+        "longitude": "75.546700",
+        "order": 2,
+        "id": 1766593701960
+      }
+    ],
+    "driver2@college.edu": [
+      {
+        "name": "shimoga bus stop",
+        "latitude": "13.928700",
+        "longitude": "75.567500",
+        "order": 1,
+        "id": 1766596381556
+      },
+      {
+        "name": "Tumkur",
+        "latitude": "0.000000",
+        "longitude": "0.000000",
+        "order": 2,
+        "id": 1773775676570
+      }
+    ]
+  }
+}

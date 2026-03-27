@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>College Bus Tracker | Next-Gen</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Poppins', 'sans-serif'] },
+          colors: { 
+            brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a' } 
+          },
+          animation: {
+            'blob': 'blob 7s infinite',
+            'fade-in': 'fadeIn 1s ease-out',
+          },
+          keyframes: {
+            blob: {
+              '0%': { transform: 'translate(0px, 0px) scale(1)' },
+              '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+              '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+              '100%': { transform: 'translate(0px, 0px) scale(1)' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Animated Gradient Background */
+    .hero-gradient {
+      background: linear-gradient(-45deg, #1e3a8a, #2563eb, #3b82f6, #0f172a);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Glass Effect */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .dark .glass-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Carousel Transition */
+    .slide {
+      display: none;
+      animation: fadeEffect 1s; /* Smoother fade */
+    }
+    .slide.active {
+      display: block;
+    }
+    @keyframes fadeEffect {
+      from {opacity: .6} 
+      to {opacity: 1}
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
+
+<nav class="fixed w-full top-0 z-50 transition-all duration-300 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-sm border-b border-gray-200 dark:border-gray-800">
+  <div class="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
+    <div class="flex items-center gap-2 cursor-pointer group" onclick="window.location.href='index.html'">
+      <span class="text-3xl group-hover:animate-bounce">🚍</span>
+      <div class="leading-tight">
+        <h1 class="text-xl font-extrabold text-brand-600 dark:text-brand-500 tracking-tight">COLLEGE BUS</h1>
+        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 tracking-widest uppercase">Tracker System</span>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-6 font-semibold">
+      <a href="login.html" class="hidden md:block text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 transition">Login</a>
+      <!--<a href="signup.html" class="hidden md:block bg-brand-600 text-white px-6 py-2 rounded-full hover:bg-brand-700 shadow-lg shadow-brand-500/30 transition transform hover:-translate-y-0.5">Sign Up</a>
+    -->
+      <button id="theme-toggle" class="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition focus:outline-none ring-2 ring-transparent focus:ring-brand-500">
+        <svg id="theme-toggle-light-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+        <svg id="theme-toggle-dark-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<section class="relative pt-32 pb-24 lg:pt-48 lg:pb-32 overflow-hidden hero-gradient">
+  
+  <div class="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+  <div class="absolute top-0 -right-4 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+  <div class="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+
+  <div class="relative z-10 max-w-7xl mx-auto px-6 grid lg:grid-cols-2 items-center gap-12">
+
+    <div data-aos="fade-right" data-aos-duration="1000">
+      <div class="inline-flex items-center gap-2 px-4 py-2 mb-6 rounded-full bg-white/10 border border-white/20 text-white text-sm font-semibold backdrop-blur-sm">
+        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+        Live GPS Tracking System
+      </div>
+      <h1 class="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-6 drop-shadow-lg">
+        Track Your Ride <br>
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-cyan-200">In Real-Time</span>
+      </h1>
+
+      <p class="text-lg text-blue-100 max-w-lg leading-relaxed mb-8">
+        Experience the future of campus commute. Secure, accurate, and instant updates for students and drivers. Never wait at the bus stop guessing again.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-4">
+        <a href="login.html"
+           class="text-center bg-white text-brand-700 px-8 py-4 rounded-full font-bold shadow-xl hover:shadow-2xl hover:bg-gray-100 transition transform hover:-translate-y-1">
+          Login Now
+        </a><!--
+        <a href="signup.html"
+           class="text-center bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-bold hover:bg-white/10 transition transform hover:-translate-y-1">
+          Create Account
+        </a>-->
+      </div>
+    </div>
+
+    <div class="relative" data-aos="zoom-in" data-aos-duration="1200">
+      
+      <div class="relative w-full h-[350px] md:h-[450px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 group">
+        
+        <div class="slide active h-full w-full">
+          <img src="images/Bus Image.png" class="w-full h-full object-cover" alt="College Bus 1">
+          <div class="absolute bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent w-full p-6">
+          </div>
+        </div>
+      </div>
+
+      <div class="absolute -top-6 -right-6 w-24 h-24 bg-yellow-400 rounded-full blur-xl opacity-60 animate-pulse -z-10"></div>
+      <div class="absolute -bottom-6 -left-6 w-32 h-32 bg-blue-600 rounded-full blur-xl opacity-60 animate-pulse -z-10"></div>
+    </div>
+  </div>
+</section>
+
+<section class="py-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-gray-200 dark:divide-gray-700">
+      <div data-aos="fade-up" data-aos-delay="0">
+        <p class="text-3xl md:text-4xl font-extrabold text-brand-600 dark:text-brand-500">50+</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-1">Active Buses</p>
+      </div>
+      <div data-aos="fade-up" data-aos-delay="100">
+        <p class="text-3xl md:text-4xl font-extrabold text-brand-600 dark:text-brand-500">2k+</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-1">Students</p>
+      </div>
+      <div data-aos="fade-up" data-aos-delay="200">
+        <p class="text-3xl md:text-4xl font-extrabold text-brand-600 dark:text-brand-500">100%</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-1">Coverage</p>
+      </div>
+      <div data-aos="fade-up" data-aos-delay="300">
+        <p class="text-3xl md:text-4xl font-extrabold text-brand-600 dark:text-brand-500">24/7</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-1">System Uptime</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto py-24 px-6">
+  <div class="text-center mb-16" data-aos="fade-up">
+    <h2 class="text-sm font-bold tracking-wide text-brand-600 dark:text-brand-400 uppercase mb-2">Features</h2>
+    <h3 class="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white">Why Students Love It</h3>
+    <p class="mt-4 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+      Our platform connects drivers and students seamlessly, reducing wait times and improving campus safety.
+    </p>
+  </div>
+
+  <div class="grid md:grid-cols-3 gap-8">
+    <div class="glass-card p-8 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group" data-aos="fade-up" data-aos-delay="100">
+      <div class="w-16 h-16 bg-blue-50 dark:bg-gray-700 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+        <span class="text-3xl">📍</span>
+      </div>
+      <h3 class="font-bold text-xl text-gray-900 dark:text-white mb-3">Live GPS Tracking</h3>
+      <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+        Pinpoint your bus on the map with near-zero latency. Know exactly when to leave your home or classroom.
+      </p>
+    </div>
+
+    <div class="glass-card p-8 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group" data-aos="fade-up" data-aos-delay="200">
+      <div class="w-16 h-16 bg-purple-50 dark:bg-gray-700 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+        <span class="text-3xl">📡</span>
+      </div>
+      <h3 class="font-bold text-xl text-gray-900 dark:text-white mb-3">Instant Updates</h3>
+      <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+        Powered by WebSockets, location data flows instantly from the driver's device to your screen. No refreshing needed.
+      </p>
+    </div>
+
+    <div class="glass-card p-8 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group" data-aos="fade-up" data-aos-delay="300">
+      <div class="w-16 h-16 bg-green-50 dark:bg-gray-700 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+        <span class="text-3xl">📱</span>
+      </div>
+      <h3 class="font-bold text-xl text-gray-900 dark:text-white mb-3">Fully Responsive</h3>
+      <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+        Whether you are on a laptop in the library or a phone at the bus stop, the experience is optimized for you.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="bg-gray-50 dark:bg-gray-800 py-20 px-6">
+  <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+    <div class="relative rounded-2xl overflow-hidden shadow-2xl" data-aos="fade-right">
+      <img src="images/Inside Bus.jpeg" alt="Safe Travel" class="w-full h-full object-cover">
+      <div class="absolute inset-0 bg-blue-900/20"></div>
+    </div>
+    <div data-aos="fade-left">
+      <h3 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Safety First, Always.</h3>
+      <p class="text-gray-600 dark:text-gray-300 mb-6 text-lg">
+        We prioritize student safety by ensuring verified drivers and secure data transmission. Parents and students can rest assured knowing the precise location of college transport.
+      </p>
+      <ul class="space-y-3">
+        <li class="flex items-center gap-3 text-gray-700 dark:text-gray-200">
+          <span class="text-green-500 text-xl">✔</span> Verified Drivers Only
+        </li>
+        <li class="flex items-center gap-3 text-gray-700 dark:text-gray-200">
+          <span class="text-green-500 text-xl">✔</span> Encrypted Data Transmission
+        </li>
+        <li class="flex items-center gap-3 text-gray-700 dark:text-gray-200">
+          <span class="text-green-500 text-xl">✔</span> Emergency Support Integration
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="bg-white dark:bg-gray-900 py-24 px-6 relative overflow-hidden">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-16" data-aos="fade-up">
+      <h2 class="text-sm font-bold tracking-wide text-brand-600 dark:text-brand-400 uppercase mb-2">Workflow</h2>
+      <h3 class="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white">How It Works</h3>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-10">
+      <div class="relative bg-gray-50 dark:bg-gray-800 p-8 rounded-2xl shadow-md border-t-4 border-brand-500" data-aos="fade-right" data-aos-delay="100">
+        <span class="absolute top-4 right-4 text-6xl text-gray-200 dark:text-gray-700 font-bold opacity-30">1</span>
+        <div class="text-4xl mb-4">📍</div>
+        <h4 class="font-bold text-xl text-gray-900 dark:text-white">Driver Starts GPS</h4>
+        <p class="text-gray-600 dark:text-gray-300 mt-2">
+          The bus driver logs in via their mobile dashboard and enables location sharing with a single tap.
+        </p>
+      </div>
+
+      <div class="relative bg-gray-50 dark:bg-gray-800 p-8 rounded-2xl shadow-md border-t-4 border-purple-500" data-aos="fade-up" data-aos-delay="200">
+        <span class="absolute top-4 right-4 text-6xl text-gray-200 dark:text-gray-700 font-bold opacity-30">2</span>
+        <div class="text-4xl mb-4">📡</div>
+        <h4 class="font-bold text-xl text-gray-900 dark:text-white">Server Syncs Data</h4>
+        <p class="text-gray-600 dark:text-gray-300 mt-2">
+          Our high-speed server processes coordinates and broadcasts them securely to authorized students.
+        </p>
+      </div>
+
+      <div class="relative bg-gray-50 dark:bg-gray-800 p-8 rounded-2xl shadow-md border-t-4 border-green-500" data-aos="fade-left" data-aos-delay="300">
+        <span class="absolute top-4 right-4 text-6xl text-gray-200 dark:text-gray-700 font-bold opacity-30">3</span>
+        <div class="text-4xl mb-4">🗺️</div>
+        <h4 class="font-bold text-xl text-gray-900 dark:text-white">Students Track</h4>
+        <p class="text-gray-600 dark:text-gray-300 mt-2">
+          Students open the web app to see live bus movements, estimated arrival times, and status.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-gray-900 dark:bg-black text-gray-300 py-12 border-t border-gray-800">
+  <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-8 items-center text-center md:text-left">
+    <div>
+      <h4 class="text-white font-bold text-2xl">🚌 College Bus</h4>
+      <p class="mt-2 text-gray-400 text-sm">
+        Advanced GPS tracking solution ensuring safety and punctuality for every student.
+      </p>
+    </div>
+    <div class="flex flex-col space-y-2">
+      <a href="login.html" class="hover:text-brand-400 transition">Login</a>
+      <a href="signup.html" class="hover:text-brand-400 transition">Create Account</a>
+    </div>
+    <div class="text-gray-500 text-sm md:text-right">
+      <p>&copy; 2025 College Bus Tracking System.</p>
+      <p>All Rights Reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+  AOS.init({ once: true });
+</script>
+
+<script>
+  const themeToggleBtn = document.getElementById('theme-toggle');
+  const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+  const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+  if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+      themeToggleLightIcon.classList.remove('hidden');
+  } else {
+      document.documentElement.classList.remove('dark');
+      themeToggleDarkIcon.classList.remove('hidden');
+  }
+
+  themeToggleBtn.addEventListener('click', function() {
+      themeToggleDarkIcon.classList.toggle('hidden');
+      themeToggleLightIcon.classList.toggle('hidden');
+      if (localStorage.getItem('color-theme')) {
+          if (localStorage.getItem('color-theme') === 'light') {
+              document.documentElement.classList.add('dark');
+              localStorage.setItem('color-theme', 'dark');
+          } else {
+              document.documentElement.classList.remove('dark');
+              localStorage.setItem('color-theme', 'light');
+          }
+      } else {
+          if (document.documentElement.classList.contains('dark')) {
+              document.documentElement.classList.remove('dark');
+              localStorage.setItem('color-theme', 'light');
+          } else {
+              document.documentElement.classList.add('dark');
+              localStorage.setItem('color-theme', 'dark');
+          }
+      }
+  });
+</script>
+
+<script>
+  let slideIndex = 0;
+  const slides = document.querySelectorAll(".slide");
+  const slideIntervalTime = 2000; // 2 seconds
+  let slideInterval;
+
+  function showSlides(n) {
+    if (n >= slides.length) slideIndex = 0;
+    if (n < 0) slideIndex = slides.length - 1;
+
+    slides.forEach(slide => slide.classList.remove("active"));
+    slides[slideIndex].classList.add("active");
+  }
+
+  function changeSlide(n) {
+    clearInterval(slideInterval); // Reset timer on manual click
+    slideIndex += n;
+    showSlides(slideIndex);
+    slideInterval = setInterval(() => { slideIndex++; showSlides(slideIndex); }, slideIntervalTime);
+  }
+
+  // Auto Slide
+  slideInterval = setInterval(() => {
+    slideIndex++;
+    showSlides(slideIndex);
+  }, slideIntervalTime);
+</script>
+
+</body>
+</html>

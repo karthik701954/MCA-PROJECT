@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Driver Live GPS</title>
+  
+  <script src="/socket.io/socket.io.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Poppins', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              500: '#3b82f6',
+              600: '#2563eb',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    #map {
+      height: 60vh;
+      width: 100%;
+      border-radius: 1.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      z-index: 10;
+    }
+    
+    .status-dot {
+      height: 12px;
+      width: 12px;
+      background-color: #22c55e;
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse-green 2s infinite;
+    }
+    @keyframes pulse-green {
+      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    .welcome-badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      animation: fadeInDown 0.5s ease-out;
+    }
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors duration-300 min-h-screen flex flex-col">
+
+<nav class="bg-white dark:bg-gray-800 shadow-sm py-4 px-6 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex items-center gap-2">
+    <span class="text-2xl">🚍</span>
+    <h1 class="font-bold text-xl text-brand-600 dark:text-brand-500">Driver Console</h1>
+  </div>
+  
+  <div class="flex items-center gap-4">
+    <a href="index.html" class="text-sm font-semibold text-gray-500 hover:text-brand-600 transition hidden sm:block">Home</a>
+    
+    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-full font-bold transition shadow-md">Logout</button>
+
+    <button id="theme-toggle" class="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+      <svg id="theme-toggle-light-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+      <svg id="theme-toggle-dark-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+    </button>
+  </div>
+</nav>
+
+<main class="flex-grow max-w-3xl mx-auto w-full p-4 space-y-6">
+
+  <!-- ✅ WELCOME MESSAGE -->
+  <div id="welcomeCard" class="welcome-badge text-white p-5 rounded-2xl shadow-lg flex items-center justify-between">
+    <div>
+      <h2 class="text-sm font-semibold opacity-80 uppercase tracking-wide">Welcome Back</h2>
+      <p id="welcomeName" class="text-2xl font-bold mt-1">Loading...</p>
+      <p id="welcomeEmail" class="text-sm opacity-70 mt-1"></p>
+    </div>
+    <div class="text-5xl opacity-30">👋</div>
+  </div>
+
+  <!-- STATUS CARD -->
+  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 flex items-center justify-between border-l-4 border-blue-500">
+    <div>
+      <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Current Status</h2>
+      <p id="status" class="text-lg font-bold text-gray-800 dark:text-white mt-1 flex items-center gap-2">
+        <span class="w-3 h-3 bg-gray-400 rounded-full"></span> Waiting...
+      </p>
+    </div>
+    <div class="text-4xl opacity-20">📡</div>
+  </div>
+
+  <!-- MAP -->
+  <div class="relative group">
+    <div id="map" class="border-4 border-white dark:border-gray-700"></div>
+    <div class="absolute top-4 right-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur text-xs px-3 py-1 rounded-full shadow font-semibold">
+      🚍 <span id="mapDriverName">Driver View</span>
+    </div>
+  </div>
+
+  <!-- CONTROL BUTTONS -->
+  <div class="grid grid-cols-2 gap-4">
+    <button id="start" class="flex flex-col items-center justify-center p-6 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all duration-200">
+      <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <span class="font-bold text-lg">START GPS</span>
+      <span class="text-xs opacity-80 mt-1">Mobile Only</span>
+    </button>
+
+    <button id="stop" class="flex flex-col items-center justify-center p-6 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all duration-200">
+      <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
+      <span class="font-bold text-lg">STOP</span>
+      <span class="text-xs opacity-80 mt-1">End Session</span>
+    </button>
+  </div>
+
+  <!-- BUS STOPS SECTION -->
+  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow p-6">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-xl">🛑</span>
+      <h3 class="font-bold text-gray-700 dark:text-gray-200">Bus Stops</h3>
+    </div>
+    
+    <!-- Add Stop Form -->
+    <div class="bg-blue-50 dark:bg-gray-700 rounded-xl p-4 mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+        <input id="stopNameInput" placeholder="Stop Name (e.g., Gate A)" class="w-full bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-900 dark:text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+        <input id="stopLatInput" placeholder="Latitude (optional)" class="w-full bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-900 dark:text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+        <input id="stopLngInput" placeholder="Longitude (optional)" class="w-full bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-900 dark:text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+        <button id="addStopBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition shadow-md active:scale-95">
+          ➕ Add Stop
+        </button>
+      </div>
+    </div>
+
+    <!-- Stops List -->
+    <div id="stopsList" class="space-y-2 max-h-48 overflow-y-auto">
+      <div class="text-center text-gray-400 text-sm py-4">No stops added yet</div>
+    </div>
+  </div>
+
+  <!-- MANUAL INPUT -->
+  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow p-6 mt-8">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-xl">💻</span>
+      <h3 class="font-bold text-gray-700 dark:text-gray-200">Manual Backup (Laptop)</h3>
+    </div>
+    
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <input id="latInput" placeholder="Latitude (e.g. 12.97)" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+      <input id="lngInput" placeholder="Longitude (e.g. 77.59)" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+    </div>
+    
+    <button id="manual" class="w-full bg-gray-800 dark:bg-gray-600 text-white font-semibold py-3 rounded-xl hover:bg-gray-900 dark:hover:bg-gray-500 transition shadow-md active:scale-95">
+      Send Manual Location
+    </button>
+  </div>
+
+</main>
+
+<footer class="text-center p-6 text-gray-500 text-sm">
+  &copy; 2025 College Bus Tracker | Driver Console
+</footer>
+
+<script>
+const socket = io();
+let map, marker, watchId = null;
+let currentStops = [];
+
+// ✅ GET LOGGED-IN DRIVER INFO FROM LOCAL STORAGE
+let currentDriver = JSON.parse(localStorage.getItem("currentUser")) || null;
+
+// ✅ CHECK IF DRIVER IS LOGGED IN
+if (!currentDriver || currentDriver.role !== "driver") {
+  alert("Please login as a driver first!");
+  window.location.href = "login.html";
+}
+
+// ✅ DISPLAY WELCOME MESSAGE
+document.getElementById("welcomeName").textContent = currentDriver.name;
+document.getElementById("welcomeEmail").textContent = currentDriver.email;
+document.getElementById("mapDriverName").textContent = currentDriver.name + "'s Bus";
+
+// ✅ JOIN DRIVER ROOM
+socket.emit("driver-join", { driverEmail: currentDriver.email });
+
+// ✅ LOGOUT FUNCTION
+document.getElementById("logoutBtn").onclick = () => {
+  // Stop GPS if running
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+    socket.emit("driver-stop", { driverEmail: currentDriver.email });
+  }
+  
+  localStorage.removeItem("currentUser");
+  window.location.href = "index.html";
+};
+
+// ✅ ADD STOP BUTTON
+document.getElementById("addStopBtn").onclick = () => {
+  const stopName = document.getElementById("stopNameInput").value.trim();
+  const stopLat = document.getElementById("stopLatInput").value.trim();
+  const stopLng = document.getElementById("stopLngInput").value.trim();
+
+  if (!stopName) {
+    alert("Please enter a stop name!");
+    return;
+  }
+
+  const lat = stopLat ? parseFloat(stopLat) : 0;
+  const lng = stopLng ? parseFloat(stopLng) : 0;
+
+  if (stopLat && stopLng && (isNaN(lat) || isNaN(lng))) {
+    alert("Invalid coordinates!");
+    return;
+  }
+
+  socket.emit("add-stop", {
+    driverEmail: currentDriver.email,
+    stopName: stopName,
+    latitude: lat,
+    longitude: lng
+  });
+
+  // Clear inputs
+  document.getElementById("stopNameInput").value = "";
+  document.getElementById("stopLatInput").value = "";
+  document.getElementById("stopLngInput").value = "";
+};
+
+// ✅ REMOVE STOP
+function removeStop(stopId) {
+  socket.emit("remove-stop", {
+    driverEmail: currentDriver.email,
+    stopId: stopId
+  });
+}
+
+// ✅ SET CURRENT STOP
+function setCurrentStop(index) {
+  socket.emit("set-current-stop", {
+    driverEmail: currentDriver.email,
+    stopIndex: index
+  });
+}
+
+// ✅ RENDER STOPS LIST
+function renderStops(stops) {
+  currentStops = stops;
+  const stopsList = document.getElementById("stopsList");
+
+  if (stops.length === 0) {
+    stopsList.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">No stops added yet</div>';
+    return;
+  }
+
+  stopsList.innerHTML = stops.map((stop, idx) => `
+    <div class="flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-3 rounded-lg border-l-4 border-green-500">
+      <div class="flex-1">
+        <div class="font-semibold text-sm">${idx + 1}. ${stop.name}</div>
+        <div class="text-xs text-gray-500">${stop.latitude}, ${stop.longitude}</div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="setCurrentStop(${idx})" class="text-blue-500 hover:text-blue-600 font-bold text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded">Set Current</button>
+        <button onclick="removeStop(${stop.id})" class="text-red-500 hover:text-red-600 font-bold text-xs px-2 py-1 bg-red-100 dark:bg-red-900 rounded">Remove</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+// ✅ LISTEN FOR BUS UPDATES
+socket.on("all-buses", (buses) => {
+  const myBus = buses.find(b => b.driverEmail === currentDriver.email);
+  if (myBus && myBus.stops) {
+    renderStops(myBus.stops);
+  }
+});
+
+// ✅ LISTEN FOR MY STOPS (from server on driver-join or get-my-stops)
+socket.on("my-stops", (stops) => {
+  renderStops(stops);
+});
+
+// ✅ INIT GOOGLE MAP
+function initMap(){
+  const pos = { lat: 12.9716, lng: 77.5946 };
+
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: pos,
+    zoom: 15,
+    disableDefaultUI: false,
+    streetViewControl: false
+  });
+
+  marker = new google.maps.Marker({
+    map,
+    position: pos,
+    icon: {
+      url: "bus.png/bus_.png",
+      scaledSize: new google.maps.Size(40, 40)
+    }
+  });
+}
+
+// ✅ SMOOTH ANIMATION
+function moveSmooth(lat, lng){
+  const start = marker.getPosition();
+  const steps = 30;
+  let i = 0;
+
+  const latStep = (lat - start.lat()) / steps;
+  const lngStep = (lng - start.lng()) / steps;
+
+  const interval = setInterval(() => {
+    i++;
+    const newLat = start.lat() + latStep * i;
+    const newLng = start.lng() + lngStep * i;
+
+    marker.setPosition({ lat: newLat, lng: newLng });
+    map.panTo({ lat: newLat, lng: newLng });
+
+    if (i >= steps) clearInterval(interval);
+  }, 20);
+}
+
+// ✅ START GPS (INCLUDES DRIVER INFO)
+document.getElementById("start").onclick = () => {
+  if (!navigator.geolocation) {
+    alert("GPS not supported on this device.");
+    return;
+  }
+
+  if (watchId !== null) return;
+
+  const statusEl = document.getElementById("status");
+  statusEl.innerHTML = '<span class="status-dot"></span> Starting GPS...';
+  statusEl.className = "text-lg font-bold text-green-600 dark:text-green-400 mt-1 flex items-center gap-2";
+
+  watchId = navigator.geolocation.watchPosition(pos => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    moveSmooth(lat, lng);
+    
+    // ✅ SEND WITH DRIVER INFO
+    socket.emit("driver-location", { 
+      driverEmail: currentDriver.email,
+      driverName: currentDriver.name,
+      latitude: lat, 
+      longitude: lng 
+    });
+
+    document.getElementById("status").innerHTML = `<span class="status-dot"></span> LIVE: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }, err => {
+    alert("GPS Error: " + err.message);
+  }, {
+    enableHighAccuracy: true,
+    maximumAge: 1000,
+    timeout: 10000
+  });
+};
+
+// ✅ STOP GPS (INCLUDES DRIVER INFO)
+document.getElementById("stop").onclick = () => {
+  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+  watchId = null;
+  
+  // ✅ SEND WITH DRIVER INFO
+  socket.emit("driver-stop", { driverEmail: currentDriver.email });
+  
+  const statusEl = document.getElementById("status");
+  statusEl.innerText = "⛔ Stopped";
+  statusEl.className = "text-lg font-bold text-red-600 dark:text-red-400 mt-1 flex items-center gap-2";
+};
+
+// ✅ MANUAL INPUT (INCLUDES DRIVER INFO)
+document.getElementById("manual").onclick = () => {
+  const latVal = parseFloat(document.getElementById("latInput").value);
+  const lngVal = parseFloat(document.getElementById("lngInput").value);
+
+  if (isNaN(latVal) || isNaN(lngVal)) {
+    alert("Enter valid numbers!");
+    return;
+  }
+
+  moveSmooth(latVal, lngVal);
+  
+  // ✅ SEND WITH DRIVER INFO
+  socket.emit("driver-location", { 
+    driverEmail: currentDriver.email,
+    driverName: currentDriver.name,
+    latitude: latVal, 
+    longitude: lngVal 
+  });
+
+  const statusEl = document.getElementById("status");
+  statusEl.innerText = `MANUAL: ${latVal}, ${lngVal}`;
+  statusEl.className = "text-lg font-bold text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-2";
+};
+</script>
+
+<script>
+  const themeToggleBtn = document.getElementById('theme-toggle');
+  const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+  const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+  if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+      themeToggleLightIcon.classList.remove('hidden');
+  } else {
+      document.documentElement.classList.remove('dark');
+      themeToggleDarkIcon.classList.remove('hidden');
+  }
+
+  themeToggleBtn.addEventListener('click', function() {
+      themeToggleDarkIcon.classList.toggle('hidden');
+      themeToggleLightIcon.classList.toggle('hidden');
+      if (localStorage.getItem('color-theme')) {
+          if (localStorage.getItem('color-theme') === 'light') {
+              document.documentElement.classList.add('dark');
+              localStorage.setItem('color-theme', 'dark');
+          } else {
+              document.documentElement.classList.remove('dark');
+              localStorage.setItem('color-theme', 'light');
+          }
+      } else {
+          if (document.documentElement.classList.contains('dark')) {
+              document.documentElement.classList.remove('dark');
+              localStorage.setItem('color-theme', 'light');
+          } else {
+              document.documentElement.classList.add('dark');
+              localStorage.setItem('color-theme', 'dark');
+          }
+      }
+  });
+</script>
+
+<script async defer 
+src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCzejsIQjrvZAvl_BxEzfRkD9z5YqtFYSg&callback=initMap"></script>
+
+</body>
+</html>

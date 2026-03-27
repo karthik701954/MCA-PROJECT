@@ -1,0 +1,21 @@
+{
+  "name": "college-bus-tracking",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "open": "^10.2.0",
+    "openurl": "^1.1.1",
+    "socket.io": "^4.8.1"
+  }
+}
