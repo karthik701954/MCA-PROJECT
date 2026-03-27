@@ -23,3 +23,13 @@ A real-time web-based system to track college buses using GPS and live updates.
 
 3. Open browser:
    http://localhost:3000
+## Screenshots
+
+### Driver Dashboard
+![Driver](screenshots/Driver Dashboard.png)
+
+### Student Dashboard
+![Student](screenshots/Student Dashboard.png)
+
+### Home Page
+![Home](screenshots/Index Page.png)
