@@ -1,4 +1,4 @@
-# College Bus Tracking System
+# Real_Time College Bus Tracker
 
 A real-time web-based system to track college buses using GPS and live updates.
 
